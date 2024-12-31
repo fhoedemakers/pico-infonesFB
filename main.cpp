@@ -25,6 +25,7 @@
 #include <InfoNES_System.h>
 #include <InfoNES_pAPU.h>
 
+
 #include <dvi/dvi.h>
 #include <tusb.h>
 #include <gamepad.h>
@@ -399,11 +400,13 @@ void InfoNES_LoadFrame()
     use_framebuffer1 = !use_framebuffer1; // Toggle the framebuffer
     framebuffer = use_framebuffer1 ? framebuffer1 : framebuffer2;
     mutex_exit(&framebuffer_mutex);
-   
+    int teller = 0;
     // Wait if the target framebuffer is being rendered
     while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
     {
-        __wfe();
+        // printf("Core 0: Waiting for framebuffer to be rendered %d\n", teller++);
+        // __wfe();
+        tight_loop_contents();
     }
 }
 
@@ -462,10 +465,10 @@ void __not_in_flash_func(InfoNES_PreDrawLine)(int line)
 
 void __not_in_flash_func(InfoNES_PostDrawLine)(int line)
 {
-// #if !defined(NDEBUG)
-//     util::WorkMeterMark(0xffff);
-//     drawWorkMeter(line);
-// #endif
+    // #if !defined(NDEBUG)
+    //     util::WorkMeterMark(0xffff);
+    //     drawWorkMeter(line);
+    // #endif
 
     // assert(currentLineBuffer_);
     // dvi_->setLineBuffer(line, currentLineBuffer_);
@@ -545,7 +548,7 @@ void __not_in_flash_func(coreFB_main)()
     dvi_->start();
     while (true)
     {
-        
+
         bool may_render = false;
         // Try to acquire the mutex to check for new frames
         if (mutex_try_enter(&framebuffer_mutex, NULL))
@@ -553,14 +556,14 @@ void __not_in_flash_func(coreFB_main)()
             // Check if the other framebuffer is ready
             if (framebuffer1_ready && !framebuffer1_rendering)
             {
-                //printf("Core 1: Switching to framebuffer1\n");
+                // printf("Core 1: Switching to framebuffer1\n");
                 framebuffer1_rendering = true;
                 may_render = true;
                 current_framebuffer = framebuffer1;
             }
             else if (framebuffer2_ready && !framebuffer2_rendering)
             {
-                //printf("Core 1: Switching to framebuffer2\n");
+                // printf("Core 1: Switching to framebuffer2\n");
                 framebuffer2_rendering = true;
                 may_render = true;
                 current_framebuffer = framebuffer2;
@@ -569,14 +572,18 @@ void __not_in_flash_func(coreFB_main)()
         }
         if (may_render)
         {
-            // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);            
+            // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);
             for (int line = 4; line < 240 - 4; ++line)
             {
                 uint8_t *current_line = &current_framebuffer[line * 320];
-                for (int kol = 0; kol < 320; kol++)
+                for (int kol = 0; kol < 320; kol += 4)
                 {
-                    buffer[kol] = NesPalette[current_line[kol]];
+                    // buffer[kol] = NesPalette[current_line[kol]];
                     // NesPalette[current_framebuffer[line * 320 + kol] & 0x3F];
+                    buffer[kol] = NesPalette[current_line[kol]];
+                    buffer[kol + 1] = NesPalette[current_line[kol + 1]];
+                    buffer[kol + 2] = NesPalette[current_line[kol + 2]];
+                    buffer[kol + 3] = NesPalette[current_line[kol + 3]];
                 }
                 if (scaleMode8_7_)
                 {
@@ -586,27 +593,31 @@ void __not_in_flash_func(coreFB_main)()
                 }
                 else
                 {
-                    //printf("line: %d\n", line);
+                    // printf("line: %d\n", line);
                     dvi_->convertScanBuffer12bpp(line, buffer, 640);
-
                 }
             }
             // Mark the framebuffer as no longer being rendered
             mutex_enter_blocking(&framebuffer_mutex);
-            if (current_framebuffer == framebuffer1) {
+            if (current_framebuffer == framebuffer1)
+            {
                 framebuffer1_rendering = false;
                 fb1++;
-                fb2 = 0;    
-            } else {
+                fb2 = 0;
+            }
+            else
+            {
                 framebuffer2_rendering = false;
                 fb2++;
-                fb1=0;  
+                fb1 = 0;
             }
             mutex_exit(&framebuffer_mutex);
-            if ( fb1 > 1 ) {
+            if (fb1 > 1)
+            {
                 printf("fb1: %d\n", fb1);
             }
-            if ( fb2 > 1 ) {
+            if (fb2 > 1)
+            {
                 printf("fb2: %d\n", fb2);
             }
         }
