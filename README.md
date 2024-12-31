@@ -1,5 +1,9 @@
 # pico-infones
 
+Experimental version, uses framebuffers in stead of rendering individual lines to Display..
+
+RP2350 Only
+
 This software is a port of InfoNES, a NES emulator, for the Raspberry Pi Pico, and supports video and audio output over HDMI.
 The code for HDMI output is based on [PicoDVI](https://github.com/Wren6991/PicoDVI).
 
