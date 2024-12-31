@@ -81,7 +81,7 @@ namespace
         NOSCANLINE_1_1,
         MAX,
     };
-    ScreenMode screenMode_ = ScreenMode::SCANLINE_1_1;
+    ScreenMode screenMode_{}; // = ScreenMode::SCANLINE_1_1;
 
     bool scaleMode8_7_ = true; // true
 
@@ -397,8 +397,9 @@ void InfoNES_LoadFrame()
         framebuffer2_ready = true;
     }
     use_framebuffer1 = !use_framebuffer1; // Toggle the framebuffer
-    mutex_exit(&framebuffer_mutex);
     framebuffer = use_framebuffer1 ? framebuffer1 : framebuffer2;
+    mutex_exit(&framebuffer_mutex);
+   
     // Wait if the target framebuffer is being rendered
     while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
     {
@@ -540,6 +541,7 @@ void __not_in_flash_func(coreFB_main)()
     // dvi_->waitForValidLine();
     int fb1 = 0;
     int fb2 = 0;
+    int frame = 0;
     dvi_->start();
     while (true)
     {
@@ -567,6 +569,7 @@ void __not_in_flash_func(coreFB_main)()
         }
         if (may_render)
         {
+            // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);            
             for (int line = 4; line < 240 - 4; ++line)
             {
                 uint8_t *current_line = &current_framebuffer[line * 320];
@@ -577,7 +580,7 @@ void __not_in_flash_func(coreFB_main)()
                 }
                 if (scaleMode8_7_)
                 {
-                    dvi_->convertScanBuffer12bppScaled16_7(34, 32, 288 * 2);
+                    dvi_->convertScanBuffer12bppScaled16_7(34, 32, 288 * 2, line, buffer, 640);
                     // 34 + 252 + 34
                     // 32 + 576 + 32
                 }
