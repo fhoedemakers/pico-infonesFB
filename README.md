@@ -1,4 +1,4 @@
-# pico-infones
+# pico-infones with framebuffers
 
 Experimental version, uses framebuffers in stead of rendering individual lines to display..
 
