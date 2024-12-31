@@ -461,10 +461,10 @@ void __not_in_flash_func(InfoNES_PreDrawLine)(int line)
 
 void __not_in_flash_func(InfoNES_PostDrawLine)(int line)
 {
-#if !defined(NDEBUG)
-    util::WorkMeterMark(0xffff);
-    drawWorkMeter(line);
-#endif
+// #if !defined(NDEBUG)
+//     util::WorkMeterMark(0xffff);
+//     drawWorkMeter(line);
+// #endif
 
     // assert(currentLineBuffer_);
     // dvi_->setLineBuffer(line, currentLineBuffer_);
