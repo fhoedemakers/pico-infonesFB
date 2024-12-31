@@ -25,7 +25,6 @@
 #include <InfoNES_System.h>
 #include <InfoNES_pAPU.h>
 
-
 #include <dvi/dvi.h>
 #include <tusb.h>
 #include <gamepad.h>
@@ -40,7 +39,7 @@ const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 
 uint8_t framebuffer1[320 * 240];
 uint8_t framebuffer2[320 * 240];
-uint8_t *framebuffer = framebuffer1;
+uint8_t *framebufferCore0 = framebuffer1;
 
 // Shared state
 volatile bool framebuffer1_ready = false;
@@ -380,8 +379,15 @@ extern WORD PC;
 
 void InfoNES_LoadFrame()
 {
+    // Wait if core1 is still rendering the previous framebuffer
+    int start = time_us_64();
+    while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
+    {
+        tight_loop_contents();
+    }
+    int end = time_us_64();
+    //printf("Core 0: Switching framebuffers took %ld us\n", end - start);
     gpio_put(LED_PIN, hw_divider_s32_quotient_inlined(dvi_->getFrameCounter(), 60) & 1);
-    //    printf("%04x\n", PC);
 
     tuh_task();
     // switch framebuffers
@@ -398,16 +404,9 @@ void InfoNES_LoadFrame()
         framebuffer2_ready = true;
     }
     use_framebuffer1 = !use_framebuffer1; // Toggle the framebuffer
-    framebuffer = use_framebuffer1 ? framebuffer1 : framebuffer2;
+    framebufferCore0 = use_framebuffer1 ? framebuffer1 : framebuffer2;
     mutex_exit(&framebuffer_mutex);
-    int teller = 0;
-    // Wait if the target framebuffer is being rendered
-    while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
-    {
-        // printf("Core 0: Waiting for framebuffer to be rendered %d\n", teller++);
-        // __wfe();
-        tight_loop_contents();
-    }
+    // continue emulation while the other core renders the framebuffer
 }
 
 namespace
@@ -456,7 +455,7 @@ void __not_in_flash_func(InfoNES_PreDrawLine)(int line)
     // util::WorkMeterMark(0xaaaa);
     // auto b = dvi_->getLineBuffer();
     // util::WorkMeterMark(0x5555);
-    uint8_t *tmpWorkline = &framebuffer[line * 320];
+    uint8_t *tmpWorkline = &framebufferCore0[line * 320];
     InfoNES_SetLineBuffer(lineBuffer + 32, tmpWorkline + 32, 320);
     //    (*b)[319] = line + dvi_->getFrameCounter();
 
@@ -539,7 +538,7 @@ void __not_in_flash_func(core1_main)()
 WORD buffer[320];
 void __not_in_flash_func(coreFB_main)()
 {
-    uint8_t *current_framebuffer = framebuffer1;
+    uint8_t *framebufferCore1 = framebuffer1;
     dvi_->registerIRQThisCore();
     // dvi_->waitForValidLine();
     int fb1 = 0;
@@ -559,14 +558,14 @@ void __not_in_flash_func(coreFB_main)()
                 // printf("Core 1: Switching to framebuffer1\n");
                 framebuffer1_rendering = true;
                 may_render = true;
-                current_framebuffer = framebuffer1;
+                framebufferCore1 = framebuffer1;
             }
             else if (framebuffer2_ready && !framebuffer2_rendering)
             {
                 // printf("Core 1: Switching to framebuffer2\n");
                 framebuffer2_rendering = true;
                 may_render = true;
-                current_framebuffer = framebuffer2;
+                framebufferCore1 = framebuffer2;
             }
             mutex_exit(&framebuffer_mutex);
         }
@@ -575,7 +574,7 @@ void __not_in_flash_func(coreFB_main)()
             // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);
             for (int line = 4; line < 240 - 4; ++line)
             {
-                uint8_t *current_line = &current_framebuffer[line * 320];
+                uint8_t *current_line = &framebufferCore1[line * 320];
                 for (int kol = 0; kol < 320; kol += 4)
                 {
                     // buffer[kol] = NesPalette[current_line[kol]];
@@ -599,7 +598,7 @@ void __not_in_flash_func(coreFB_main)()
             }
             // Mark the framebuffer as no longer being rendered
             mutex_enter_blocking(&framebuffer_mutex);
-            if (current_framebuffer == framebuffer1)
+            if (framebufferCore1 == framebuffer1)
             {
                 framebuffer1_rendering = false;
                 fb1++;
@@ -684,7 +683,7 @@ int main()
                                       dvi::getTiming640x480p60Hz());
     //    dvi_->setAudioFreq(48000, 25200, 6144);
     dvi_->setAudioFreq(44100, 28000, 6272);
-    dvi_->allocateAudioBuffer(512);
+    dvi_->allocateAudioBuffer(256 * 4);
     //    dvi_->setExclusiveProc(&exclProc_);
 
     dvi_->getBlankSettings().top = 4 * 2;
