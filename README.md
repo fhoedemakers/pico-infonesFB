@@ -1,6 +1,6 @@
 # pico-infones with framebuffers
 
-Experimental version, uses framebuffers in stead of rendering individual lines to display..
+Experimental version, uses framebuffers in stead of rendering individual lines to display.
 
 RP2350 Only
 
