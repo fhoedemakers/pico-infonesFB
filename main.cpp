@@ -149,7 +149,8 @@ void saveNVRAM()
         printf("SRAM not updated.\n");
         return;
     }
-
+    
+    //mutex_enter_blocking(&framebuffer_mutex);
     printf("save SRAM\n");
     exclProc_.setProcAndWait([]
                              {
@@ -164,7 +165,7 @@ void saveNVRAM()
             }
         } });
     printf("done\n");
-
+    //mutex_exit(&framebuffer_mutex);
     SRAMwritten = false;
 }
 
@@ -172,8 +173,10 @@ void loadNVRAM()
 {
     if (auto addr = getCurrentNVRAMAddr())
     {
+       // mutex_enter_blocking(&framebuffer_mutex);
         printf("load SRAM %x\n", addr);
         memcpy(SRAM, reinterpret_cast<void *>(addr), SRAM_SIZE);
+        // mutex_exit(&framebuffer_mutex);
     }
     SRAMwritten = false;
 }
@@ -379,14 +382,7 @@ extern WORD PC;
 
 void InfoNES_LoadFrame()
 {
-    // Wait if core1 is still rendering the previous framebuffer
-    int start = time_us_64();
-    while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
-    {
-        tight_loop_contents();
-    }
-    int end = time_us_64();
-    //printf("Core 0: Switching framebuffers took %ld us\n", end - start);
+   
     gpio_put(LED_PIN, hw_divider_s32_quotient_inlined(dvi_->getFrameCounter(), 60) & 1);
 
     tuh_task();
@@ -406,6 +402,17 @@ void InfoNES_LoadFrame()
     use_framebuffer1 = !use_framebuffer1; // Toggle the framebuffer
     framebufferCore0 = use_framebuffer1 ? framebuffer1 : framebuffer2;
     mutex_exit(&framebuffer_mutex);
+     // Wait if core1 is still rendering the framebuffer whe just switched to
+    int start = time_us_64();
+    while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
+    {
+        //printf("Core 0: Waiting for core 1 to finish rendering: %d\n", tell++);
+        tight_loop_contents();
+    }
+    int end = time_us_64();
+#if 0
+    printf("Core 0: Switching framebuffers took %ld us\n", end - start);
+#endif
     // continue emulation while the other core renders the framebuffer
 }
 
@@ -539,87 +546,96 @@ WORD buffer[320];
 void __not_in_flash_func(coreFB_main)()
 {
     uint8_t *framebufferCore1 = framebuffer1;
-    dvi_->registerIRQThisCore();
+    //dvi_->registerIRQThisCore();
     // dvi_->waitForValidLine();
     int fb1 = 0;
     int fb2 = 0;
     int frame = 0;
-    dvi_->start();
+    //dvi_->start();
     while (true)
     {
+        dvi_->registerIRQThisCore();
+        dvi_->start();
+        while (!exclProc_.isExist())
+        {
 
-        bool may_render = false;
-        // Try to acquire the mutex to check for new frames
-        if (mutex_try_enter(&framebuffer_mutex, NULL))
-        {
-            // Check if the other framebuffer is ready
-            if (framebuffer1_ready && !framebuffer1_rendering)
+            bool may_render = false;
+            // Try to acquire the mutex to check for new frames
+            if (mutex_try_enter(&framebuffer_mutex, NULL))
             {
-                // printf("Core 1: Switching to framebuffer1\n");
-                framebuffer1_rendering = true;
-                may_render = true;
-                framebufferCore1 = framebuffer1;
-            }
-            else if (framebuffer2_ready && !framebuffer2_rendering)
-            {
-                // printf("Core 1: Switching to framebuffer2\n");
-                framebuffer2_rendering = true;
-                may_render = true;
-                framebufferCore1 = framebuffer2;
-            }
-            mutex_exit(&framebuffer_mutex);
-        }
-        if (may_render)
-        {
-            // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);
-            for (int line = 4; line < 240 - 4; ++line)
-            {
-                uint8_t *current_line = &framebufferCore1[line * 320];
-                for (int kol = 0; kol < 320; kol += 4)
+                // Check if the other framebuffer is ready
+                if (framebuffer1_ready && !framebuffer1_rendering)
                 {
-                    // buffer[kol] = NesPalette[current_line[kol]];
-                    // NesPalette[current_framebuffer[line * 320 + kol] & 0x3F];
-                    buffer[kol] = NesPalette[current_line[kol]];
-                    buffer[kol + 1] = NesPalette[current_line[kol + 1]];
-                    buffer[kol + 2] = NesPalette[current_line[kol + 2]];
-                    buffer[kol + 3] = NesPalette[current_line[kol + 3]];
+                    // printf("Core 1: Switching to framebuffer1\n");
+                    framebuffer1_rendering = true;
+                    may_render = true;
+                    framebufferCore1 = framebuffer1;
                 }
-                if (scaleMode8_7_)
+                else if (framebuffer2_ready && !framebuffer2_rendering)
                 {
-                    dvi_->convertScanBuffer12bppScaled16_7(34, 32, 288 * 2, line, buffer, 640);
-                    // 34 + 252 + 34
-                    // 32 + 576 + 32
+                    // printf("Core 1: Switching to framebuffer2\n");
+                    framebuffer2_rendering = true;
+                    may_render = true;
+                    framebufferCore1 = framebuffer2;
+                }
+                mutex_exit(&framebuffer_mutex);
+            }
+            if (may_render)
+            {
+                // printf("Core 1: Rendering frame %s %d\n", current_framebuffer == framebuffer1 ? "framebuffer1" : "framebuffer2", frame++);
+                for (int line = 4; line < 240 - 4; ++line)
+                {
+                    uint8_t *current_line = &framebufferCore1[line * 320];
+                    for (int kol = 0; kol < 320; kol += 4)
+                    {
+                        // buffer[kol] = NesPalette[current_line[kol]];
+                        // NesPalette[current_framebuffer[line * 320 + kol] & 0x3F];
+                        buffer[kol] = NesPalette[current_line[kol]];
+                        buffer[kol + 1] = NesPalette[current_line[kol + 1]];
+                        buffer[kol + 2] = NesPalette[current_line[kol + 2]];
+                        buffer[kol + 3] = NesPalette[current_line[kol + 3]];
+                    }
+                    if (scaleMode8_7_)
+                    {
+                        dvi_->convertScanBuffer12bppScaled16_7(34, 32, 288 * 2, line, buffer, 640);
+                        // 34 + 252 + 34
+                        // 32 + 576 + 32
+                    }
+                    else
+                    {
+                        // printf("line: %d\n", line);
+                        dvi_->convertScanBuffer12bpp(line, buffer, 640);
+                    }
+                }
+                // Mark the framebuffer as no longer being rendered
+                mutex_enter_blocking(&framebuffer_mutex);
+                if (framebufferCore1 == framebuffer1)
+                {
+                    framebuffer1_rendering = false;
+                    fb1++;
+                    fb2 = 0;
                 }
                 else
                 {
-                    // printf("line: %d\n", line);
-                    dvi_->convertScanBuffer12bpp(line, buffer, 640);
+                    framebuffer2_rendering = false;
+                    fb2++;
+                    fb1 = 0;
+                }
+                mutex_exit(&framebuffer_mutex);
+                if (fb1 > 1)
+                {
+                    printf("fb1: %d\n", fb1);
+                }
+                if (fb2 > 1)
+                {
+                    printf("fb2: %d\n", fb2);
                 }
             }
-            // Mark the framebuffer as no longer being rendered
-            mutex_enter_blocking(&framebuffer_mutex);
-            if (framebufferCore1 == framebuffer1)
-            {
-                framebuffer1_rendering = false;
-                fb1++;
-                fb2 = 0;
-            }
-            else
-            {
-                framebuffer2_rendering = false;
-                fb2++;
-                fb1 = 0;
-            }
-            mutex_exit(&framebuffer_mutex);
-            if (fb1 > 1)
-            {
-                printf("fb1: %d\n", fb1);
-            }
-            if (fb2 > 1)
-            {
-                printf("fb2: %d\n", fb2);
-            }
         }
+        dvi_->unregisterIRQThisCore();
+        dvi_->stop();
+
+        exclProc_.processOrWaitIfExist();
     }
 }
 
