@@ -34,7 +34,7 @@ const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 
 #ifndef DVICONFIG
 // #define DVICONFIG dviConfig_PicoDVI
-#define DVICONFIG dviConfig_PicoDVISock
+#define DVICONFIG dviConfig_AdafruitMetroRP2350 // dviConfig_PimoroniDemoDVSock
 #endif
 
 uint8_t framebuffer1[320 * 240];
@@ -52,7 +52,7 @@ mutex_t framebuffer_mutex;
 
 namespace
 {
-    constexpr uint32_t CPUFreqKHz = 252000;
+    constexpr uint32_t CPUFreqKHz = 252000; // 324000; // 252000;
 
     constexpr dvi::Config dviConfig_PicoDVI = {
         .pinTMDS = {10, 12, 14},
@@ -66,9 +66,21 @@ namespace
         .invert = false,
     };
 
+    // Pimoroni Digital Video, SD Card & Audio Demo Board
+    constexpr dvi::Config dviConfig_PimoroniDemoDVSock = {
+        .pinTMDS = {8, 10, 12},
+        .pinClock = 6,
+        .invert = true,
+    };
+      // FruitJam
+    constexpr dvi::Config dviConfig_AdafruitMetroRP2350 = {
+        .pinTMDS = {18, 16, 12},
+        .pinClock = 14,
+        .invert = false,
+    };
     std::unique_ptr<dvi::DVI> dvi_;
-
-    static constexpr uintptr_t NES_FILE_ADDR = 0x10080000;
+    extern "C" char contra_nes[];
+    static  uintptr_t NES_FILE_ADDR = reinterpret_cast<uintptr_t>(&contra_nes[0]); //0x10080000;
 
     ROMSelector romSelector_;
     util::ExclusiveProc exclProc_;
@@ -149,8 +161,8 @@ void saveNVRAM()
         printf("SRAM not updated.\n");
         return;
     }
-    
-    //mutex_enter_blocking(&framebuffer_mutex);
+
+    // mutex_enter_blocking(&framebuffer_mutex);
     printf("save SRAM\n");
     exclProc_.setProcAndWait([]
                              {
@@ -165,7 +177,7 @@ void saveNVRAM()
             }
         } });
     printf("done\n");
-    //mutex_exit(&framebuffer_mutex);
+    // mutex_exit(&framebuffer_mutex);
     SRAMwritten = false;
 }
 
@@ -173,7 +185,7 @@ void loadNVRAM()
 {
     if (auto addr = getCurrentNVRAMAddr())
     {
-       // mutex_enter_blocking(&framebuffer_mutex);
+        // mutex_enter_blocking(&framebuffer_mutex);
         printf("load SRAM %x\n", addr);
         memcpy(SRAM, reinterpret_cast<void *>(addr), SRAM_SIZE);
         // mutex_exit(&framebuffer_mutex);
@@ -382,7 +394,7 @@ extern WORD PC;
 
 void InfoNES_LoadFrame()
 {
-   
+
     gpio_put(LED_PIN, hw_divider_s32_quotient_inlined(dvi_->getFrameCounter(), 60) & 1);
 
     tuh_task();
@@ -402,7 +414,8 @@ void InfoNES_LoadFrame()
     use_framebuffer1 = !use_framebuffer1; // Toggle the framebuffer
     framebufferCore0 = use_framebuffer1 ? framebuffer1 : framebuffer2;
     mutex_exit(&framebuffer_mutex);
-     // Wait if core1 is still rendering the framebuffer whe just switched to
+// Wait if core1 is still rendering the framebuffer whe just switched to
+#if 1
     int start = time_us_64();
     while ((use_framebuffer1 && framebuffer1_rendering) || (!use_framebuffer1 && framebuffer2_rendering))
     {
@@ -410,6 +423,7 @@ void InfoNES_LoadFrame()
         tight_loop_contents();
     }
     int end = time_us_64();
+#endif
 #if 0
     printf("Core 0: Switching framebuffers took %ld us\n", end - start);
 #endif
@@ -546,12 +560,12 @@ WORD buffer[320];
 void __not_in_flash_func(coreFB_main)()
 {
     uint8_t *framebufferCore1 = framebuffer1;
-    //dvi_->registerIRQThisCore();
-    // dvi_->waitForValidLine();
+    // dvi_->registerIRQThisCore();
+    //  dvi_->waitForValidLine();
     int fb1 = 0;
     int fb2 = 0;
     int frame = 0;
-    //dvi_->start();
+    // dvi_->start();
     while (true)
     {
         dvi_->registerIRQThisCore();

@@ -17,6 +17,7 @@ add_executable(picones
     hid_app.cpp
     gamepad.cpp
     tar.cpp
+    contra.c
 )
 
 pico_set_program_name(picones "picones")
@@ -52,7 +53,6 @@ PRIVATE
     dvi
     util
     infones
-
     tinyusb_host
 )
 
