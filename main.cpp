@@ -1037,7 +1037,7 @@ int main()
 #endif
 
     stdio_init_all();
-    memset(tempbuf, 0x37, sizeof(tempbuf));
+    memset(tempbuf, 0, sizeof(tempbuf));
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
