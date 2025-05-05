@@ -43,9 +43,9 @@
 #include <assert.h>
 #include <pico.h>
 #include <tuple>
-
+#if HSTX == 0
 #include <util/work_meter.h>
-
+#endif
 constexpr uint16_t makeTag(int r, int g, int b)
 {
   return (r << 10) | (g << 5) | (b);

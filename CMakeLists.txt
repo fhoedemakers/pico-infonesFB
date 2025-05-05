@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 #set(PICO_SDK_PATH "~/pico/pico-sdk")
 set(PICO_BOARD pico2 CACHE STRING "Board type")
 include(pico_sdk_import.cmake)
-
+set(HSTX 1 CACHE BOOL "Enable HSTX")
 project(picones C CXX ASM)
 pico_sdk_init()
 
@@ -37,7 +37,9 @@ else()
     family_configure_target(picones "" )
 endif()
 # add_compile_definitions(CFG_TUSB_DEBUG=0)
-
+target_compile_definitions(picones PRIVATE
+    HSTX=${HSTX}
+)
 target_link_libraries(picones
 PRIVATE
     pico_stdlib
@@ -50,18 +52,45 @@ PRIVATE
     hardware_clocks
     hardware_pwm
     hardware_flash
-    dvi
-    util
+
+    infones
+    tinyusb_host
+)
+if (HSTX)
+    message(STATUS "HSTX enabled")
+else()
+    message(STATUS "DVI enabled")
+    target_link_libraries(picones PRIVATE
+        util
+        dvi
+    )
+    target_include_directories(picones
+    PRIVATE
+        pico_lib
+    )
+endif()
+target_include_directories(picones
+PRIVATE
+    infones
+    .
+)
+target_link_libraries(picones
+PRIVATE
+    pico_stdlib
+    pico_multicore
+    hardware_dma
+    hardware_pio
+    hardware_i2c
+    hardware_interp
+    hardware_timer
+    hardware_clocks
+    hardware_pwm
+    hardware_flash
     infones
     tinyusb_host
 )
 
-target_include_directories(picones
-PRIVATE
-    pico_lib
-    infones
-    .
-)
+
 
 add_subdirectory(pico_lib/dvi)
 add_subdirectory(pico_lib/util)
