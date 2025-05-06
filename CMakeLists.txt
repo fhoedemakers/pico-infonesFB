@@ -17,7 +17,7 @@ add_executable(picones
     hid_app.cpp
     gamepad.cpp
     tar.cpp
-    contra.c
+    nes_rom.c
 )
 
 pico_set_program_name(picones "picones")

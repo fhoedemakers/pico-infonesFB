@@ -348,14 +348,14 @@ static inline void __not_in_flash_func(K6502_Write)(WORD wAddr, BYTE byData)
         PalTable[0x00] = PalTable[0x04] = PalTable[0x08] = PalTable[0x0c] =
             PalTable[0x10] = PalTable[0x14] = PalTable[0x18] = PalTable[0x1c] = NesPalette[byData] | 0x8000;
         PalTable8[0x00] = PalTable8[0x04] = PalTable8[0x08] = PalTable8[0x0c] =
-            PalTable8[0x10] = PalTable8[0x14] = PalTable8[0x18] = PalTable8[0x1c] = byData ; // | 0x80;
+            PalTable8[0x10] = PalTable8[0x14] = PalTable8[0x18] = PalTable8[0x1c] = NesPaletteRGB332[byData] ; // | 0x80;
       }
       else if (addr & 3)
       {
         // Palette
         PPURAM[addr] = byData;
         PalTable[addr & 0x1f] = NesPalette[byData];
-        PalTable8[addr & 0x1f] = byData;
+        PalTable8[addr & 0x1f] = NesPaletteRGB332[byData];
       }
     }
     break;

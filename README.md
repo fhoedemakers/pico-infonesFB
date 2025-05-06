@@ -17,7 +17,7 @@ cd build
 cmake ..
 make
 ```
-
+Copy `pico-infones.uf2` to the RP2350 in bootselect mode.
 
 ## Controller
 The following controllers are supported.

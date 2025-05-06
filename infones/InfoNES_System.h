@@ -19,6 +19,7 @@
 /*  Palette data                                                     */
 /*-------------------------------------------------------------------*/
 extern const WORD NesPalette[];
+extern const char NesPaletteRGB332[];
 
 /*-------------------------------------------------------------------*/
 /*  Function prototypes                                              */

@@ -2,3 +2,4 @@
 build
 **.nes
 contra.c
+nes_rom.c

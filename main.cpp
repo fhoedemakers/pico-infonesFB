@@ -185,6 +185,7 @@ static uint v_scanline = 2;
 // post the command list, and another to post the pixels.
 static bool vactive_cmdlist_posted = false;
 
+// char __scratch_y("tempbuf") tempbuf[640];
 char tempbuf[640];
 inline uint8_t RGB565_to_RGB332(uint16_t rgb565) {
     // Extract the red, green, and blue components from RGB565
@@ -239,21 +240,29 @@ void __scratch_x("") dma_irq_handler()
        
         //printf("Scanline %d\n", scanlineIndex);
         //if (scanlineIndex < 240) {
-        if ( scanlineIndex % 2 == 0 ) {
+        //if ( scanlineIndex % 2 == 0 ) {
+        if ( scanlineIndex < 240 ) {
             //printf("Scanline %d\n", scanlineIndex);
-            uint8_t *scanlinepointer = framebuf + ((scanlineIndex >> 1) * 320);
-            char *dest = &tempbuf[0];
-            for(uint8_t *x = scanlinepointer; x < scanlinepointer + 320; x++)
+            uint8_t *scanlinepointer = framebuf + ((scanlineIndex) * 320);
+            // char *dest = &tempbuf[31];
+            // for(uint8_t *x = scanlinepointer + 32; x < scanlinepointer + 240; x++)
+            // {
+            //   *dest++ = *x;
+            //   *dest++ = *x;
+            // }
+            int y = 64;
+            for (int i = 32; i < 240+32; i++)
             {
-            //     uint8_t color =  RGB565_to_RGB332( NesPalette[*x]);
-            //   if ( color != 0) {
-            //     color+=2;
-            //   }
-              *dest++ = *x;
-              *dest++ = *x;
-
+                //tempbuf[i] = RGB565_to_RGB332(scanlinepointer[i]);
+                tempbuf[y++] = scanlinepointer[i];
+                // tempbuf[y++] = scanlinepointer[i];
             }
-
+            for (int i = 32; i < 240+32; i++)
+            {
+                //tempbuf[i] = RGB565_to_RGB332(scanlinepointer[i]);
+                tempbuf[y++] = scanlinepointer[i];
+                // tempbuf[y++] = scanlinepointer[i];
+            }
         }
             //__builtin_memcpy(tempbuf, scanlinepointer, 320);
         //}
@@ -305,8 +314,8 @@ void __scratch_x("") dma_irq_handler()
 
 
 #endif
-    extern "C" char contra_nes[];
-    static  uintptr_t NES_FILE_ADDR = reinterpret_cast<uintptr_t>(&contra_nes[0]); //0x10080000;
+    extern "C" char nes_rom[];
+    static  uintptr_t NES_FILE_ADDR = reinterpret_cast<uintptr_t>(&nes_rom[0]); //0x10080000;
 
     ROMSelector romSelector_;
  
@@ -367,7 +376,13 @@ const WORD __not_in_flash_func(NesPalette)[64] = {
     CC(0x7ae7), CC(0x4342), CC(0x2769), CC(0x2ff3), CC(0x03bb), CC(0x0000), CC(0x0000), CC(0x0000),
     CC(0x7fff), CC(0x579f), CC(0x635f), CC(0x6b3f), CC(0x7f1f), CC(0x7f1b), CC(0x7ef6), CC(0x7f75),
     CC(0x7f94), CC(0x73f4), CC(0x57d7), CC(0x5bf9), CC(0x4ffe), CC(0x0000), CC(0x0000), CC(0x0000)};
-
+// NES Palette (RGB332 values):
+const char __not_in_flash_func(NesPaletteRGB332)[] = {
+    0x6d, 0xe0, 0xa0, 0xa5, 0x82, 0x22, 0x02, 0x02, 0x05, 0x0c, 0x0c, 0x08, 0x48, 0x00, 0x00, 0x00,
+    0xb6, 0xec, 0xe8, 0xe9, 0xc3, 0x43, 0x07, 0x0b, 0x0e, 0x14, 0x14, 0x54, 0x90, 0x00, 0x00, 0x00,
+    0xff, 0xf4, 0xf1, 0xee, 0xef, 0x8b, 0x4f, 0x57, 0x17, 0x1e, 0x59, 0x9d, 0xdc, 0x6d, 0x00, 0x00,
+    0xff, 0xfe, 0xf6, 0xf7, 0xf7, 0xd7, 0xbb, 0xbf, 0x7b, 0x7f, 0xbe, 0xde, 0xfc, 0xfb, 0x00, 0x00,
+    };
 uint32_t getCurrentNVRAMAddr()
 {
     if (!romSelector_.getCurrentROM())
@@ -810,7 +825,7 @@ void __not_in_flash_func(core1_main)()
 #endif
 }
 
-WORD buffer[320];
+//WORD buffer[320];
 #if HSTX == 0
 void __not_in_flash_func(coreFB_main)()
 {
@@ -1030,14 +1045,15 @@ void __not_in_flash_func(coreFB_main)()
 #endif
 int main()
 {
-#if HSTX == 0
+#if HSTX == 1
     vreg_set_voltage(VREG_VOLTAGE_1_20);
     sleep_ms(10);
     set_sys_clock_khz(CPUFreqKHz, true);
 #endif
 
+    
     stdio_init_all();
-    memset(tempbuf, 0, sizeof(tempbuf));
+    memset(tempbuf, 0x37, sizeof(tempbuf));
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
