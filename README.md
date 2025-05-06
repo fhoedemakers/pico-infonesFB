@@ -1,27 +1,23 @@
 # pico-infones with framebuffers
 
-Experimental version, uses framebuffers in stead of rendering individual lines to display.
+Experimental version using HSTX, uses framebuffers in stead of rendering individual lines to display.
 
-RP2350 Only
-
-This software is a port of InfoNES, a NES emulator, for the Raspberry Pi Pico, and supports video and audio output over HDMI.
-The code for HDMI output is based on [PicoDVI](https://github.com/Wren6991/PicoDVI).
-
-## Wiring
-The default pinout of the HDMI connector follows the [Pico-DVI-Sock](https://github.com/Wren6991/Pico-DVI-Sock). 
-Some TVs will not recognize the signal unless you input 5V to pin 18 of the HDMI connector.
-
-The controller should be connected to the micro USB port of the Raspberry Pi Pico via an OTG adapter.
-
-Supply +5V to VBUS (pin 40) as power source. Be careful not to connect the power supply at the same time as the PC connection, for example when writing programs or ROMs.
+Adafruit Metro RP2350 Only
 
 ## ROM
-The ROM should be placed in some way from 0x10080000, and can be easily transferred using [picotool](https://github.com/raspberrypi/picotool).
-```
-picotool load foo.nes -t bin -o 0x10080000
+
+The rom must be compiled into this project. I do not provide any roms. You must provide your own.
+Example below is for a rom named `rom.nes` in the root of the project.
+
+```bash
+sudo apt-get install xxd
+xxd -i -n nes_rom rom.nes nes_rom.c
+mkdir build
+cd build
+cmake ..
+make
 ```
 
-You can either place the .nes files directly or place a tar file containing multiple .nes files. The maximum file size that can be used is 1.5 MiB for the standard Raspberry Pi Pico.
 
 ## Controller
 The following controllers are supported.
