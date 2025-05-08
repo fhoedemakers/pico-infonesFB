@@ -186,7 +186,11 @@ static uint v_scanline = 2;
 static bool vactive_cmdlist_posted = false;
 
 // char __scratch_y("tempbuf") tempbuf[640];
-char tempbuf[640];
+#ifndef _IMG_ASSET_SECTION
+#define _IMG_ASSET_SECTION ".data"
+#endif
+
+char __attribute__((aligned(4), section(_IMG_ASSET_SECTION ".mario_640x240_rgb565"))) tempbuf[640];
 inline uint8_t RGB565_to_RGB332(uint16_t rgb565) {
     // Extract the red, green, and blue components from RGB565
     uint8_t red = (rgb565 >> 11) & 0x1F;  // 5 bits
@@ -248,6 +252,7 @@ void __scratch_x("") dma_irq_handler()
                 char c = scanlinepointer[i];
                 tempbuf[y] =c;
                 y++;
+            
             }
 
                          
