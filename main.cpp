@@ -248,16 +248,17 @@ void __scratch_x("") dma_irq_handler()
                 char c = scanlinepointer[i];
                 tempbuf[y] =c;
                 y++;
+            }
 
                          
+            
+            y+=-0;
+            for (int i = 0; i < 300; i++)
+            {
+                char c = scanlinepointer[i];
+                tempbuf[y] =c;
+                y++;
             }
-            // y+=-0;
-            // for (int i = 0; i < 300; i++)
-            // {
-            //     char c = scanlinepointer[i];
-            //     tempbuf[y] =c;
-            //     y++;
-            // }
        
         ;
         ch->read_addr = (uintptr_t)&tempbuf[0]; // [(v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES)) * MODE_H_ACTIVE_PIXELS];
