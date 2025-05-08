@@ -7,16 +7,17 @@ Adafruit Metro RP2350 Only
 ## ROM
 
 The rom must be compiled into this project. I do not provide any roms. You must provide your own.
-Example below is for a rom named `rom.nes` in the root of the project.
+Example below is for a rom named `rom.nes` in the root of the project, which will be compiled into the project as `nes_rom.c` using `xxd`. Unix - only, you need to have `xxd` installed.
 
 ```bash
 sudo apt-get install xxd
-xxd -i -n nes_rom rom.nes nes_rom.c
+xxd -i -n nes_rom Contra.nes | sed -e 's/unsigned/const unsigned/' > nes_rom.c
 mkdir build
 cd build
 cmake ..
 make
 ```
+
 Copy `pico-infones.uf2` to the RP2350 in bootselect mode.
 
 ## Controller
