@@ -1045,7 +1045,7 @@ void __not_in_flash_func(coreFB_main)()
 #endif
 int main()
 {
-#if HSTX == 1
+#if HSTX == 0
     vreg_set_voltage(VREG_VOLTAGE_1_20);
     sleep_ms(10);
     set_sys_clock_khz(CPUFreqKHz, true);
