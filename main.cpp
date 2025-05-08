@@ -238,52 +238,30 @@ void __scratch_x("") dma_irq_handler()
 #if 1
         int scanlineIndex = (v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES));
        
-        //printf("Scanline %d\n", scanlineIndex);
-        //if (scanlineIndex < 240) {
-        //if ( scanlineIndex % 2 == 0 ) {
-        if ( scanlineIndex < 240 ) {
-            //printf("Scanline %d\n", scanlineIndex);
-            uint8_t *scanlinepointer = framebuf + ((scanlineIndex) * 320);
-            // char *dest = &tempbuf[31];
-            // for(uint8_t *x = scanlinepointer + 32; x < scanlinepointer + 240; x++)
+        
+            uint8_t *scanlinepointer = framebuf + ((scanlineIndex >> 1) * 320);
+        
+            int y = 0;
+            int j = 0;
+            for (int i = 0; i < 300; i++)
+            {
+                char c = scanlinepointer[i];
+                tempbuf[y] =c;
+                y++;
+
+                         
+            }
+            // y+=-0;
+            // for (int i = 0; i < 300; i++)
             // {
-            //   *dest++ = *x;
-            //   *dest++ = *x;
+            //     char c = scanlinepointer[i];
+            //     tempbuf[y] =c;
+            //     y++;
             // }
-            int y = 64;
-            for (int i = 32; i < 240+32; i++)
-            {
-                //tempbuf[i] = RGB565_to_RGB332(scanlinepointer[i]);
-                tempbuf[y++] = scanlinepointer[i];
-                // tempbuf[y++] = scanlinepointer[i];
-            }
-            for (int i = 32; i < 240+32; i++)
-            {
-                //tempbuf[i] = RGB565_to_RGB332(scanlinepointer[i]);
-                tempbuf[y++] = scanlinepointer[i];
-                // tempbuf[y++] = scanlinepointer[i];
-            }
-        }
-            //__builtin_memcpy(tempbuf, scanlinepointer, 320);
-        //}
-        //else
-        //{
-        //    if (scanlineIndex == 240)
-        //    {
-        //        //__builtin_memset(tempbuf, 0x3f, sizeof(tempbuf));
-        //    }   
-        //}
+       
         ;
         ch->read_addr = (uintptr_t)&tempbuf[0]; // [(v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES)) * MODE_H_ACTIVE_PIXELS];
-        // // Duplicate the upper half of the image to the lower half
-        // if (v_scanline > 523 - 480 + 240)
-        // {
-        //     ch->read_addr = (uintptr_t)&framebuf[(v_scanline - 239 - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES)) * MODE_H_ACTIVE_PIXELS];
-        // }
-        // else
-        // {
-        //     ch->read_addr = (uintptr_t)&framebuf[(v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES)) * MODE_H_ACTIVE_PIXELS];
-        // }
+        
         ch->transfer_count = MODE_H_ACTIVE_PIXELS / sizeof(uint32_t);
 #endif
 #else
