@@ -242,29 +242,44 @@ void __scratch_x("") dma_irq_handler()
 #if 1
         int scanlineIndex = (v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES));
        
-        
+        //if ( scanlineIndex >= 240) scanlineIndex = scanlineIndex - 240;
             uint8_t *scanlinepointer = framebuf + ((scanlineIndex >> 1) * 320);
         
             int y = 0;
             int j = 0;
-            for (int i = 0; i < 300; i++)
+            char *p = (char *)&tempbuf[0];
+            uint8_t col = 0;
+           
+            for (int i = 0; i < 320; i++)
             {
-                char c = scanlinepointer[i];
-                tempbuf[y] =c;
-                y++;
+              
+                *p = scanlinepointer[i];
+                p++;
+              
+                // p++;
+        
             
             }
-
+             for (int i = 0; i < 320; i++)
+            {
+              
+                *p = scanlinepointer[i];
+                p++;
+              
+                // p++;
+        
+            
+            }
                          
             
-            y+=-0;
-            for (int i = 0; i < 300; i++)
-            {
-                char c = scanlinepointer[i];
-                tempbuf[y] =c;
-                y++;
-            }
-       
+            // y+=0;
+            // for (int i = 0; i < 320; i++)
+            // {
+            //     char c = scanlinepointer[i];
+            //     tempbuf[y] =c;
+            //     y++;
+            // }
+        
         ;
         ch->read_addr = (uintptr_t)&tempbuf[0]; // [(v_scanline - (MODE_V_TOTAL_LINES - MODE_V_ACTIVE_LINES)) * MODE_H_ACTIVE_PIXELS];
         
