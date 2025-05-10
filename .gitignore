@@ -1,5 +1,6 @@
 .vscode
 build
 **.nes
+**.tar
 contra.c
 nes_rom.c
