@@ -62,7 +62,7 @@ parseTAR(const void *_p, bool (*validateEntry)(const uint8_t *))
         }
 
         TAREntry e;
-        if (strcmp("ustar", p + 257) != 0)
+        if (memcmp("ustar", p + 257, 5) != 0)
         {
             printf("parseTAR: invalid magic\n");
             return {};
