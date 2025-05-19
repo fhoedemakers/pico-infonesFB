@@ -26,6 +26,7 @@
 #include "hardware/structs/hstx_fifo.h"
 #include "hardware/structs/sio.h"
 #include "pico/sem.h"
+#include "myringbuffer.h"
 #endif
 #include <string.h>
 #include <stdarg.h>
@@ -612,7 +613,7 @@ int __not_in_flash_func(InfoNES_GetSoundBufferSize)()
 #if HSTX == 0
     return dvi_->getAudioRingBuffer().getFullWritableSize();
 #else
-    return 0;
+    return my_rb_free();
 #endif
 }
 
@@ -1157,6 +1158,9 @@ int main()
 
     // 空サンプル詰めとく
     dvi_->getAudioRingBuffer().advanceWritePointer(255);
+#else
+    my_rb_init();
+    printf("Free ringbuffer size: %d\n", my_rb_free());
 #endif
     memset(framebuffer1, 0xff, sizeof(framebuffer1));
     memset(framebuffer2, 0xff, sizeof(framebuffer2));

@@ -18,6 +18,7 @@ add_executable(picones
     gamepad.cpp
     tar.cpp
     nes_rom.c
+    myringbuffer.c
 )
 
 pico_set_program_name(picones "picones")
