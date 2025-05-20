@@ -658,6 +658,28 @@ void __not_in_flash_func(InfoNES_SoundOutput)(int samples, BYTE *wave1, BYTE *wa
         ring.advanceWritePointer(n);
         samples -= n;
     }
+#else 
+     for (int i = 0; i < samples; ++i)
+    {
+        int w1 = wave1[i];
+        int w2 = wave2[i];
+        int w3 = wave3[i];
+        int w4 = wave4[i];
+        int w5 = wave5[i];
+
+        // Mix your channels to a 12-bit value (example mix, adjust as needed)
+        // int sample12 = (w1 + w2 + w3 + w4 + w5); // Range depends on input
+         int sample12 = w1 * 6 + w2 * 3 + w3 * 5 + w4 * 3 * 17 + w5 * 2 * 32;
+        // Clamp to 0-4095 if needed
+        if (sample12 < 0) sample12 = 0;
+        if (sample12 > 4095) sample12 = 4095;
+
+        // // Convert to 8-bit unsigned
+        // uint8_t sample8 = (sample12 * 255) / 4095;
+        my_rb_put(sample12);
+        //outBuffer[outIndex++] = sample8;
+    }
+
 #endif
 }
 
@@ -1086,6 +1108,9 @@ void __not_in_flash_func(coreFB_main)()
         __wfi();
 }
 #endif
+#if HSTX == 1
+extern "C" void init_mcp4822();
+#endif
 int main()
 {
 #if HSTX == 0
@@ -1168,7 +1193,9 @@ int main()
     mutex_init(&framebuffer_mutex);
 
     multicore_launch_core1(coreFB_main);
-
+#if HSTX == 1
+    init_mcp4822();
+#endif
     InfoNES_Main();
 
     return 0;

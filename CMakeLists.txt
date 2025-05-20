@@ -19,6 +19,7 @@ add_executable(picones
     tar.cpp
     nes_rom.c
     myringbuffer.c
+    mcp4822.c
 )
 
 pico_set_program_name(picones "picones")
@@ -53,7 +54,8 @@ PRIVATE
     hardware_clocks
     hardware_pwm
     hardware_flash
-
+    hardware_spi 
+    hardware_irq
     infones
     tinyusb_host
 )
