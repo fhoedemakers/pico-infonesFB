@@ -36,11 +36,11 @@ uint16_t DAC_data; // output value
 // B-channel, 1x, active
 #define DAC_config_chan_B 0b1011000000000000
 
-static void alarm_irq(void)
+static void __not_in_flash_func(alarm_irq)(void)
 {
 
     // Assert a GPIO when we enter the interrupt
-    gpio_put(ISR_GPIO, 1);
+    //gpio_put(ISR_GPIO, 1);
 
     // Clear the alarm irq
     hw_clear_bits(&timer_hw->intr, 1u << ALARM_NUM);
@@ -56,7 +56,7 @@ static void alarm_irq(void)
     spi_write16_blocking(SPI_PORT, &DAC_data, 1);
 
     // De-assert the GPIO when we leave the interrupt
-    gpio_put(ISR_GPIO, 0);
+   // gpio_put(ISR_GPIO, 0);
 }
 
 void init_mcp4822()
