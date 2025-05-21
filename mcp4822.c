@@ -12,20 +12,14 @@
 #define PIN_MOSI 11
 #define SPI_PORT spi1
 #define LDAC_GPIO 7
-// GPIO for timing the ISR
-#define ISR_GPIO 6
-
 // Low-level alarm infrastructure we'll be using
 #define ALARM_NUM 0
 #define ALARM_IRQ timer_hardware_alarm_get_irq_num(timer_hw, ALARM_NUM)
 
 // DDS parameters
-#define two32 4294967296.0 // 2^32
-#define Fs 44100           // 50000
-#define DELAY 26       // 20 // 1/Fs (in microseconds): dus 20 microseconds * 50000 = 1 seconde
-    // the DDS units:
-    volatile unsigned int phase_accum_main;
-volatile unsigned int phase_incr_main = (0.0 * two32) / Fs; // was 800.0
+#define Fs 44100       // Sampling frequency
+#define DELAY 26       // 1/FS in microseconds is 1/44100 * 1e6 = 22.6757 but gets rounded to 26 for 44.1kHz for improved sound.
+
 
 // SPI data
 uint16_t DAC_data; // output value
@@ -39,9 +33,6 @@ uint16_t DAC_data; // output value
 static void __not_in_flash_func(alarm_irq)(void)
 {
 
-    // Assert a GPIO when we enter the interrupt
-    //gpio_put(ISR_GPIO, 1);
-
     // Clear the alarm irq
     hw_clear_bits(&timer_hw->intr, 1u << ALARM_NUM);
 
@@ -54,9 +45,6 @@ static void __not_in_flash_func(alarm_irq)(void)
     spi_write16_blocking(SPI_PORT, &DAC_data, 1);
     DAC_data = (DAC_config_chan_B | (sample & 0xffff));
     spi_write16_blocking(SPI_PORT, &DAC_data, 1);
-
-    // De-assert the GPIO when we leave the interrupt
-   // gpio_put(ISR_GPIO, 0);
 }
 
 void init_mcp4822()
@@ -65,11 +53,6 @@ void init_mcp4822()
     // Format (channel, data bits per transfer, polarity, phase, order)
 
     spi_set_format(SPI_PORT, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_LSB_FIRST);
-
-    // Setup the ISR-timing GPIO
-    gpio_init(ISR_GPIO);
-    gpio_set_dir(ISR_GPIO, GPIO_OUT);
-    gpio_put(ISR_GPIO, 0);
 
     gpio_init(LDAC_GPIO);
     gpio_set_dir(LDAC_GPIO, GPIO_OUT);
