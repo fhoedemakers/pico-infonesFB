@@ -669,8 +669,11 @@ void __not_in_flash_func(InfoNES_SoundOutput)(int samples, BYTE *wave1, BYTE *wa
         int w5 = wave5[i];
 
         // Mix your channels to a 12-bit value (example mix, adjust as needed)
-        int sample12 = (w1 + w2 + w3 + w4 + w5); // Range depends on input
-        //int sample12 = w1 * 6 + w2 * 3 + w3 * 5 + w4 * 3 * 17 + w5 * 2 * 32;
+        // This works but some effects are silent:
+        // int sample12 =  (w1 + w2 + w3 + w4 + w5); // Range depends on input
+        // Below is a more complex mix that gives a better sound
+        int sample12 = w1 * 6 + w2 * 3 + w3 * 5 + w4 * 3 * 17 + w5 * 2 * 32; //
+       
         // Clamp to 0-4095 if needed
         if (sample12 < 0) sample12 = 0;
         if (sample12 > 4095) sample12 = 4095;
