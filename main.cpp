@@ -332,6 +332,7 @@ const WORD __not_in_flash_func(NesPalette)[64] = {
     CC(0x7fff), CC(0x579f), CC(0x635f), CC(0x6b3f), CC(0x7f1f), CC(0x7f1b), CC(0x7ef6), CC(0x7f75),
     CC(0x7f94), CC(0x73f4), CC(0x57d7), CC(0x5bf9), CC(0x4ffe), CC(0x0000), CC(0x0000), CC(0x0000)};
 // NES Palette (RGB332 values):
+// https://roger-random.github.io/RGB332_color_wheel_three.js/
 const char __not_in_flash_func(NesPaletteRGB332)[] = {
     0xb6, // 0
     0x27, // 1
