@@ -6,7 +6,11 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 #set(PICO_SDK_PATH "~/pico/pico-sdk")
-set(PICO_BOARD pico2 CACHE STRING "Board type")
+set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
+message(STATUS "PICO_BOARD_HEADER_DIRS: ${PICO_BOARD_HEADER_DIRS}")
+if ( NOT DEFINED PICO_BOARD )
+    set(PICO_BOARD pico2) 
+endif()
 include(pico_sdk_import.cmake)
 set(HSTX 1 CACHE BOOL "Enable HSTX")
 project(picones C CXX ASM)
@@ -30,8 +34,14 @@ pico_enable_stdio_usb(picones 0)
 
 # tinyusb
 set(FAMILY rp2040)
-set(BOARD pico_sdk)
+# set BOARD when not set by the user
+if (NOT DEFINED BOARD)
+    set(BOARD pico_sdk)
+endif()
 set(TINYUSB_DEBUG_LEVE 0)
+# show BOARD and FAMILY
+message(STATUS "BOARD: ${BOARD}")
+message(STATUS "FAMILY: ${FAMILY}")
 include(${PICO_TINYUSB_PATH}/hw/bsp/${FAMILY}/family.cmake)
 if (PICO_SDK_VERSION_MAJOR LESS 2)
     family_configure_target(picones)
