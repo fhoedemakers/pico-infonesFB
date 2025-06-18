@@ -100,24 +100,6 @@ PRIVATE
     infones
     .
 )
-target_link_libraries(picones
-PRIVATE
-    pico_stdlib
-    pico_multicore
-    hardware_dma
-    hardware_pio
-    hardware_i2c
-    hardware_interp
-    hardware_timer
-    hardware_clocks
-    hardware_pwm
-    hardware_flash
-    infones
-    tinyusb_host
-)
-
-
-
 add_subdirectory(pico_lib/dvi)
 add_subdirectory(pico_lib/util)
 add_subdirectory(infones)
