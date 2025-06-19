@@ -27,7 +27,7 @@ include(pico_sdk_import.cmake)
 set(HSTX 1 CACHE BOOL "Enable HSTX")
 project(picones C CXX ASM)
 pico_sdk_init()
-
+check_and_add_pico_pio_usb_support()
 add_executable(picones
     main.cpp
     hid_app.cpp
@@ -45,12 +45,13 @@ pico_enable_stdio_uart(picones 1)
 pico_enable_stdio_usb(picones 0)
 
 # tinyusb
-set(FAMILY rp2040)
+#set(FAMILY rp2040)
 # set BOARD when not set by the user
-if (NOT DEFINED BOARD)
-    set(BOARD pico_sdk)
-endif()
-set(TINYUSB_DEBUG_LEVE 0)
+# if (NOT DEFINED BOARD)
+#     set(BOARD pico_sdk)
+# endif()
+
+#set(TINYUSB_DEBUG_LEVE 0)
 # show BOARD and FAMILY
 # message(STATUS "BOARD: ${BOARD}")
 # message(STATUS "FAMILY: ${FAMILY}")
