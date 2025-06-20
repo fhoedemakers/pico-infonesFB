@@ -35,7 +35,7 @@
 #include <InfoNES.h>
 #include <InfoNES_System.h>
 #include <InfoNES_pAPU.h>
-//#include "bsp/board_api.h"
+#include "bsp/board_api.h"
 #include <tusb.h>
 #include <gamepad.h>
 #include "rom_selector.h"
@@ -291,6 +291,7 @@ namespace
 
     void applyScreenMode()
     {
+#if HSTX == 0
         bool scanLine = false;
 
         switch (screenMode_)
@@ -314,9 +315,12 @@ namespace
             scaleMode8_7_ = true;
             scanLine = false;
             break;
+        default:
+            break;
         }
-#if HSTX == 0
+
         dvi_->setScanLine(scanLine);
+
 #endif
     }
 }
@@ -1069,7 +1073,27 @@ int main()
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
 
-    tusb_init();
+   // tusb_init();
+    board_init();
+
+  printf("TinyUSB Host HID <-> Device CDC Example\r\n");
+
+  // init device and host stack on configured roothub port
+  tusb_rhport_init_t dev_init = {
+    .role = TUSB_ROLE_DEVICE,
+    .speed = TUSB_SPEED_AUTO
+  };
+  tusb_init(BOARD_TUD_RHPORT, &dev_init);
+
+  tusb_rhport_init_t host_init = {
+    .role = TUSB_ROLE_HOST,
+    .speed = TUSB_SPEED_AUTO
+  };
+  tusb_init(BOARD_TUH_RHPORT, &host_init);
+
+  if (board_init_after_tusb) {
+    board_init_after_tusb();
+  }
 
     romSelector_.init(NES_FILE_ADDR);
 

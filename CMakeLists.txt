@@ -1,34 +1,29 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.20)
 
-#set(PICO_DEOPTIMIZED_DEBUG on)
-
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
-
-#set(PICO_SDK_PATH "~/pico/pico-sdk")
+#set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# include from environment var PICO_SDK_PATH
+set(BOARD adafruit_metro_rp2350)
+set(PICO_BOARD ${BOARD})
+set(PICO_SDK_PATH $ENV{PICO_SDK_PATH})
+# set PICO_PIO_USB_PATH if not set
+if(NOT DEFINED PICO_PIO_USB_PATH)
+  set(PICO_PIO_USB_PATH $ENV{PICO_PIO_USB_PATH})
+endif()
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards)
-message(STATUS "PICO_BOARD_HEADER_DIRS: ${PICO_BOARD_HEADER_DIRS}")
-if ( NOT DEFINED PICO_BOARD )
-    set(PICO_BOARD adafruit_metro_rp2350) 
-endif()
-if ( NOT DEFINED BOARD )
-    set(BOARD adafruit_metro_rp2350) 
-endif()
-# set PICO_PIO_USB_PATH from environment variabele with the same name
-if (NOT DEFINED PICO_PIO_USB_PATH)
-    if (DEFINED ENV{PICO_PIO_USB_PATH})
-        set(PICO_PIO_USB_PATH $ENV{PICO_PIO_USB_PATH})
-    else()
-        set(PICO_PIO_USB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/pico_pio_usb)
-    endif()
-endif() 
-message(STATUS "PICO_PIO_USB_PATH: ${PICO_PIO_USB_PATH}")
-include(pico_sdk_import.cmake)
+message(STATUS "Using PICO_SDK_PATH: ${PICO_SDK_PATH}")
+message(STATUS "Using PICO_PIO_USB_PATH: ${PICO_PIO_USB_PATH}")
 set(HSTX 1 CACHE BOOL "Enable HSTX")
-project(picones C CXX ASM)
-pico_sdk_init()
-check_and_add_pico_pio_usb_support()
-add_executable(picones
+
+include(pico_sdk_import.cmake)
+include(${PICO_SDK_PATH}/lib/tinyusb/hw/bsp/family_support.cmake)
+
+#family_get_project_name(PROJECT ${CMAKE_CURRENT_LIST_DIR})
+set(PROJECT "picones")
+project(${PROJECT} C CXX ASM)
+
+# Checks this example is valid for the family and initializes the project
+family_initialize_project(${PROJECT} ${CMAKE_CURRENT_LIST_DIR})
+add_executable(${PROJECT}
     main.cpp
     hid_app.cpp
     gamepad.cpp
@@ -37,35 +32,41 @@ add_executable(picones
     myringbuffer.c
     mcp4822.c
 )
-
-pico_set_program_name(picones "picones")
-pico_set_program_version(picones "0.1")
-
-pico_enable_stdio_uart(picones 1)
-pico_enable_stdio_usb(picones 0)
-
-# tinyusb
-#set(FAMILY rp2040)
-# set BOARD when not set by the user
-# if (NOT DEFINED BOARD)
-#     set(BOARD pico_sdk)
-# endif()
-
-#set(TINYUSB_DEBUG_LEVE 0)
-# show BOARD and FAMILY
-# message(STATUS "BOARD: ${BOARD}")
-# message(STATUS "FAMILY: ${FAMILY}")
-# include(${PICO_TINYUSB_PATH}/hw/bsp/${FAMILY}/family.cmake)
-# if (PICO_SDK_VERSION_MAJOR LESS 2)
-#     family_configure_target(picones)
-# else()
-#     family_configure_target(picones "" )
-# endif()
-# add_compile_definitions(CFG_TUSB_DEBUG=0)
-target_compile_definitions(picones PRIVATE
+pico_set_program_name(${PROJECT} ${PROJECT})
+pico_set_program_version(${PROJECT} "0.1")
+pico_enable_stdio_uart(${PROJECT} 1)
+pico_enable_stdio_usb(${PROJECT} 0)
+target_compile_definitions(${PROJECT} PRIVATE
     HSTX=${HSTX}
 )
-target_link_libraries(picones
+# Configure compilation flags and libraries for the example without RTOS.
+# See the corresponding function in hw/bsp/FAMILY/family.cmake for details.
+family_configure_target(${PROJECT} "")
+# require tinyusb_pico_pio_usb
+target_link_libraries(${PROJECT} PUBLIC pico_stdlib tinyusb_device tinyusb_host tinyusb_pico_pio_usb )
+rp2040_family_configure_example_warnings(${PROJECT})
+# due to warnings from Pico-PIO-USB
+# if (FAMILY STREQUAL rp2040)
+#   target_compile_options(${PROJECT} PUBLIC
+#     -Wno-error=shadow
+#     -Wno-error=cast-align
+#     -Wno-error=cast-qual
+#     -Wno-error=redundant-decls
+#     -Wno-error=sign-conversion
+#     -Wno-error=conversion
+#     -Wno-error=sign-compare
+#     -Wno-error=unused-function
+#     -Wno-error=format
+#     -Wno-error=suggest-attribute=format
+#     -Wno-error=unused-parameter
+#     )
+# endif ()
+target_compile_options(${PROJECT} PUBLIC 
+    -Wno-error 
+    -Wno-conversion
+    -Wno-unused-parameter
+    -Wno-unused-function)
+target_link_libraries(${PROJECT}
 PRIVATE
     pico_stdlib
     pico_multicore
@@ -87,16 +88,16 @@ if (HSTX)
     message(STATUS "HSTX enabled")
 else()
     message(STATUS "DVI enabled")
-    target_link_libraries(picones PRIVATE
+    target_link_libraries(${PROJECT} PRIVATE
         util
         dvi
     )
-    target_include_directories(picones
+    target_include_directories(${PROJECT}
     PRIVATE
         pico_lib
     )
 endif()
-target_include_directories(picones
+target_include_directories(${PROJECT}
 PRIVATE
     infones
     .
@@ -104,9 +105,12 @@ PRIVATE
 add_subdirectory(pico_lib/dvi)
 add_subdirectory(pico_lib/util)
 add_subdirectory(infones)
-target_link_options(picones PRIVATE -Xlinker --print-memory-usage --data-sections)
-pico_add_extra_outputs(picones)
-
-
-
-
+target_link_options(${PROJECT} PRIVATE -Xlinker --print-memory-usage --data-sections)
+pico_add_extra_outputs(${PROJECT})
+# display the all the target_link_libraries
+get_target_property(LINK_LIBS ${PROJECT} LINK_LIBRARIES)
+message(STATUS "Target ${PROJECT} link libraries: ${LINK_LIBS}")
+# ...existing code...
+get_target_property(COMP_OPTS ${PROJECT} COMPILE_OPTIONS)
+message(STATUS "Target ${PROJECT} compile options: ${COMP_OPTS}")
+# ...existing code...
