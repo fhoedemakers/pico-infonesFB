@@ -63,9 +63,25 @@ rp2040_family_configure_example_warnings(${PROJECT})
 # endif ()
 target_compile_options(${PROJECT} PUBLIC 
     -Wno-error 
+    -Wno-shadow
+    -Wno-cast-align
+    -Wno-cast-qual
+    -Wno-redundant-decls
+    -Wno-sign-conversion
     -Wno-conversion
+    -Wno-sign-compare
+    -Wno-unused-function
+    -Wno-format
+    -Wno-suggest-attribute=format
     -Wno-unused-parameter
-    -Wno-unused-function)
+    -Wno-conversion
+    -Wno-sequence-point
+    -Wno-unused-variable
+    -Wno-implicit-fallthrough
+    -Wno-array-bounds
+    -Wno-type-limits
+    -Wno-parentheses
+)
 target_link_libraries(${PROJECT}
 PRIVATE
     pico_stdlib

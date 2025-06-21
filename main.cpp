@@ -338,12 +338,11 @@ const WORD __not_in_flash_func(NesPalette)[64] = {
 // NES Palette (RGB332 values):
 // https://roger-random.github.io/RGB332_color_wheel_three.js/
 const char __not_in_flash_func(NesPaletteRGB332)[] = {
-//  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f       
+    //  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     0xb6, 0x27, 0x03, 0x2a, 0x61, 0x80, 0xa0, 0x60, 0x68, 0x50, 0x30, 0x10, 0x2a, 0x00, 0x00, 0x00,
     0xb6, 0x4b, 0x2f, 0x8f, 0xea, 0xa1, 0xe8, 0xc8, 0x90, 0x18, 0x14, 0x34, 0x53, 0x00, 0x00, 0x00,
     0xff, 0x7b, 0x73, 0xb3, 0xcf, 0xca, 0xcd, 0xf5, 0xf8, 0xbc, 0x39, 0x9e, 0x5f, 0xb6, 0x00, 0x00,
-    0xff, 0x9b, 0xb7, 0xd7, 0xf7, 0xd2, 0xfa, 0xfe, 0xd9, 0xdd, 0xbd, 0xdf, 0xbf, 0xb6, 0x00, 0x00
-};
+    0xff, 0x9b, 0xb7, 0xd7, 0xf7, 0xd2, 0xfa, 0xfe, 0xd9, 0xdd, 0xbd, 0xdf, 0xbf, 0xb6, 0x00, 0x00};
 uint32_t getCurrentNVRAMAddr()
 {
     if (!romSelector_.getCurrentROM())
@@ -604,8 +603,8 @@ void __not_in_flash_func(InfoNES_SoundOutput)(int samples, BYTE *wave1, BYTE *wa
         ring.advanceWritePointer(n);
         samples -= n;
     }
-#else 
-     for (int i = 0; i < samples; ++i)
+#else
+    for (int i = 0; i < samples; ++i)
     {
         int w1 = wave1[i];
         int w2 = wave2[i];
@@ -618,15 +617,17 @@ void __not_in_flash_func(InfoNES_SoundOutput)(int samples, BYTE *wave1, BYTE *wa
         // int sample12 =  (w1 + w2 + w3 + w4 + w5); // Range depends on input
         // Below is a more complex mix that gives a better sound
         int sample12 = w1 * 6 + w2 * 3 + w3 * 5 + w4 * 3 * 17 + w5 * 2 * 32; //
-       
+
         // Clamp to 0-4095 if needed
-        if (sample12 < 0) sample12 = 0;
-        if (sample12 > 4095) sample12 = 4095;
+        if (sample12 < 0)
+            sample12 = 0;
+        if (sample12 > 4095)
+            sample12 = 4095;
 
         // // Convert to 8-bit unsigned
         // uint8_t sample8 = (sample12 * 255) / 4095;
         my_rb_put(sample12);
-        //outBuffer[outIndex++] = sample8;
+        // outBuffer[outIndex++] = sample8;
     }
 
 #endif
@@ -994,9 +995,9 @@ void __not_in_flash_func(coreFB_main)()
 
         // Hardcoded mapping for now using Adafruit Metro RP2350
         // The mapping is fixed as follows:
-        // D0+ = CPIO18, D0-=GPIO19, D1+=GPIO16, D1-=GPIO17, D2+-GPIO12, D2-=GPIO13 
+        // D0+ = CPIO18, D0-=GPIO19, D1+=GPIO16, D1-=GPIO17, D2+-GPIO12, D2-=GPIO13
         // For the array {6, 4, 0}:
-        
+
         // D0 (Index 0) is assigned to HSTX output bit 6 → GPIO18 (D0+) and GPIO19 (D0-).
         // D1 (Index 1) is assigned to HSTX output bit 4 → GPIO16 (D1+) and GPIO17 (D1-).
         // D2 (Index 2) is assigned to HSTX output bit 0 → GPIO12 (D2+) and GPIO13 (D2-).
@@ -1073,27 +1074,24 @@ int main()
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
 
-   // tusb_init();
+    //tusb_init();
     board_init();
 
-  printf("TinyUSB Host HID <-> Device CDC Example\r\n");
+    // // init device and host stack on configured roothub port
+    // // tusb_rhport_init_t dev_init = {
+    // //     .role = TUSB_ROLE_DEVICE,
+    // //     .speed = TUSB_SPEED_AUTO};
+    // // tusb_init(BOARD_TUD_RHPORT, &dev_init);
 
-  // init device and host stack on configured roothub port
-  tusb_rhport_init_t dev_init = {
-    .role = TUSB_ROLE_DEVICE,
-    .speed = TUSB_SPEED_AUTO
-  };
-  tusb_init(BOARD_TUD_RHPORT, &dev_init);
+    tusb_rhport_init_t host_init = {
+        .role = TUSB_ROLE_HOST,
+        .speed = TUSB_SPEED_AUTO};
+    tusb_init(BOARD_TUH_RHPORT, &host_init);
 
-  tusb_rhport_init_t host_init = {
-    .role = TUSB_ROLE_HOST,
-    .speed = TUSB_SPEED_AUTO
-  };
-  tusb_init(BOARD_TUH_RHPORT, &host_init);
-
-  if (board_init_after_tusb) {
-    board_init_after_tusb();
-  }
+    if (board_init_after_tusb)
+    {
+        board_init_after_tusb();
+    }
 
     romSelector_.init(NES_FILE_ADDR);
 

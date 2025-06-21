@@ -72,7 +72,7 @@
 #endif
 
 // Enable Device stack, Default is max speed that hardware controller could support with on-chip PHY
-#define CFG_TUD_ENABLED       1
+#define CFG_TUD_ENABLED       0
 #define CFG_TUD_MAX_SPEED     BOARD_TUD_MAX_SPEED
 
 // Enable Host stack, Default is max speed that hardware controller could support with on-chip PHY
