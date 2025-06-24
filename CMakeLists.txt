@@ -118,15 +118,17 @@ PRIVATE
     infones
     .
 )
-add_subdirectory(pico_lib/dvi)
-add_subdirectory(pico_lib/util)
+if ( HSTX EQUAL 0)
+    add_subdirectory(pico_lib/dvi)
+    add_subdirectory(pico_lib/util)
+endif()
+
 add_subdirectory(infones)
 target_link_options(${PROJECT} PRIVATE -Xlinker --print-memory-usage --data-sections)
 pico_add_extra_outputs(${PROJECT})
 # display the all the target_link_libraries
 get_target_property(LINK_LIBS ${PROJECT} LINK_LIBRARIES)
 message(STATUS "Target ${PROJECT} link libraries: ${LINK_LIBS}")
-# ...existing code...
 get_target_property(COMP_OPTS ${PROJECT} COMPILE_OPTIONS)
 message(STATUS "Target ${PROJECT} compile options: ${COMP_OPTS}")
-# ...existing code...
+
