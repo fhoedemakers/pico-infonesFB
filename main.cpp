@@ -604,6 +604,7 @@ void __not_in_flash_func(InfoNES_SoundOutput)(int samples, BYTE *wave1, BYTE *wa
         samples -= n;
     }
 #else
+return;
     for (int i = 0; i < samples; ++i)
     {
         int w1 = wave1[i];
@@ -642,7 +643,7 @@ void InfoNES_LoadFrame()
 #else
     gpio_put(LED_PIN, hw_divider_s32_quotient_inlined(frameCounter++, 60) & 1);
 #endif
-    tuh_task();
+    // tuh_task();
     // switch framebuffers
     // Lock the mutex only to update shared state
     mutex_enter_blocking(&framebuffer_mutex);
@@ -1074,7 +1075,6 @@ int main()
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
 
-    board_init();
 
 #if CFG_TUH_RPI_PIO_USB
     printf("Using PIO USB.\n");
@@ -1090,7 +1090,7 @@ int main()
     }
 #else
     printf("Using internal USB.\n");
-    tusb_init();
+    //tusb_init();
 #endif
     romSelector_.init(NES_FILE_ADDR);
 
@@ -1150,7 +1150,7 @@ int main()
     // 空サンプル詰めとく
     dvi_->getAudioRingBuffer().advanceWritePointer(255);
 #else
-    my_rb_init();
+    //my_rb_init();
     printf("Free ringbuffer size: %d\n", my_rb_free());
 #endif
     memset(framebuffer1, 0x00, sizeof(framebuffer1));
@@ -1160,7 +1160,7 @@ int main()
 
     multicore_launch_core1(coreFB_main);
 #if HSTX == 1
-    init_mcp4822();
+    //init_mcp4822();
 #endif
     InfoNES_Main();
 
