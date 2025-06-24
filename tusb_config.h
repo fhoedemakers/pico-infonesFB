@@ -79,9 +79,12 @@
 #define CFG_TUH_ENABLED       1
 #define CFG_TUH_MAX_SPEED     BOARD_TUH_MAX_SPEED
 
-#if CFG_TUSB_MCU == OPT_MCU_RP2040
 // Use pico-pio-usb as host controller for raspberry rp2040
-#define CFG_TUH_RPI_PIO_USB   1
+#ifndef CFG_TUH_RPI_PIO_USB
+#define CFG_TUH_RPI_PIO_USB   0 
+#endif
+#if !CFG_TUH_RPI_PIO_USB
+#define CFG_TUSB_RHPORT0_MODE OPT_MODE_HOST
 #endif
 
 /* USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
@@ -139,6 +142,8 @@
 #define CFG_TUH_HID                 (3*CFG_TUH_DEVICE_MAX)
 #define CFG_TUH_HID_EPIN_BUFSIZE    64
 #define CFG_TUH_HID_EPOUT_BUFSIZE   64
+
+#define CFG_TUH_XINPUT 1
 
 #ifdef __cplusplus
  }

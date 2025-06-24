@@ -1074,15 +1074,11 @@ int main()
     gpio_set_dir(LED_PIN, GPIO_OUT);
     gpio_put(LED_PIN, 1);
 
-    //tusb_init();
     board_init();
 
-    // // init device and host stack on configured roothub port
-    // // tusb_rhport_init_t dev_init = {
-    // //     .role = TUSB_ROLE_DEVICE,
-    // //     .speed = TUSB_SPEED_AUTO};
-    // // tusb_init(BOARD_TUD_RHPORT, &dev_init);
-
+#if CFG_TUH_RPI_PIO_USB
+    printf("Using PIO USB.\n");
+    board_init();
     tusb_rhport_init_t host_init = {
         .role = TUSB_ROLE_HOST,
         .speed = TUSB_SPEED_AUTO};
@@ -1092,7 +1088,10 @@ int main()
     {
         board_init_after_tusb();
     }
-
+#else
+    printf("Using internal USB.\n");
+    tusb_init();
+#endif
     romSelector_.init(NES_FILE_ADDR);
 
     // util::dumpMemory((void *)NES_FILE_ADDR, 1024);
